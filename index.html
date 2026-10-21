@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Rajput">
+<meta name="description" content="KPI Pro by Rajput — Daily KPI Track Report generator for sales agencies. Upload Excel, get PSR & SDM reports and WhatsApp-ready images instantly.">
+<title>KPI Pro by Rajput — Daily KPI Track Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#EEF2F7; --surface:#FFFFFF; --panel:#F6F8FB; --line:#E2E8F0; --ink:#0F172A; --muted:#64748B;
+  --brand:#0B5CAD; --brand2:#0EA5E9; --navy:#001A3F; --red:#DC2626; --redbg:#FEF2F2; --yel:#D97706; --yelbg:#FFFBEB;
+  --grn:#15803D; --grnbg:#F0FDF4; --shadow:0 1px 3px rgba(15,23,42,.06),0 8px 24px -12px rgba(15,23,42,.12);
+  --shadow-lg:0 4px 6px rgba(15,23,42,.05),0 20px 40px -16px rgba(11,92,173,.25); --r:16px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0B1220;--surface:#111A2C;--panel:#16233A;--line:#22314D;--ink:#E8EEF7;--muted:#94A7C4;--redbg:#3A1620;--yelbg:#3A2B10;--grnbg:#123324;--shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{--bg:#0B1220;--surface:#111A2C;--panel:#16233A;--line:#22314D;--ink:#E8EEF7;--muted:#94A7C4;--redbg:#3A1620;--yelbg:#3A2B10;--grnbg:#123324}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',-apple-system,'Segoe UI',Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:#0B5CAD;color:#fff}
+/* ---------- App bar ---------- */
+.appbar{position:relative;overflow:hidden;background:linear-gradient(115deg,#000F2B 0%,#001F4D 38%,#0B5CAD 78%,#0EA5E9 115%);color:#fff;padding:26px 22px 30px}
+.appbar::after{content:'';position:absolute;right:-70px;top:-90px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.16),transparent 65%)}
+.appbar::before{content:'';position:absolute;left:32%;bottom:-140px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(14,165,233,.28),transparent 65%)}
+.appbar-in{max-width:1140px;margin:0 auto;display:flex;align-items:center;gap:16px;position:relative;z-index:1;flex-wrap:wrap}
+.logo{width:54px;height:54px;border-radius:15px;background:linear-gradient(140deg,#38BDF8,#0B5CAD);display:flex;align-items:center;justify-content:center;font-size:27px;box-shadow:0 10px 22px -8px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.4);flex:none}
+.brand h1{margin:0;font-size:25px;font-weight:900;letter-spacing:-.02em;line-height:1.05}
+.brand h1 .pro{background:linear-gradient(90deg,#7DD3FC,#38BDF8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand p{margin:3px 0 0;font-size:12.5px;opacity:.82;font-weight:500}
+.by{margin-left:auto;text-align:right;position:relative;z-index:1}
+.by .chip{display:inline-block;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);backdrop-filter:blur(6px);padding:6px 13px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.04em}
+.by small{display:block;margin-top:7px;font-size:11px;opacity:.75}
+/* ---------- Layout ---------- */
+.wrap{max-width:1140px;margin:-14px auto 0;padding:0 18px 26px;position:relative;z-index:2}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:16px;box-shadow:var(--shadow);animation:rise .45s cubic-bezier(.2,.8,.25,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.card h2{font-size:12.5px;text-transform:uppercase;letter-spacing:.09em;margin:0 0 13px;color:var(--ink);display:flex;align-items:center;gap:8px}
+.card h2::after{content:'';flex:1;height:1px;background:var(--line)}
+/* ---------- Drop zone ---------- */
+.drop{border:2px dashed #7FB3E3;border-radius:20px;padding:36px 22px;text-align:center;background:linear-gradient(180deg,var(--surface),var(--panel));cursor:pointer;transition:all .25s cubic-bezier(.2,.8,.25,1);box-shadow:var(--shadow);animation:rise .4s both}
+.drop:hover,.drop.over{border-color:var(--brand);transform:translateY(-2px);box-shadow:var(--shadow-lg);background:linear-gradient(180deg,var(--panel),var(--surface))}
+.drop .ic{width:64px;height:64px;margin:0 auto 12px;border-radius:19px;background:linear-gradient(140deg,#0B5CAD,#0EA5E9);color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 12px 24px -9px rgba(11,92,173,.55);animation:float 3.2s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.drop b{font-size:16.5px;font-weight:800;letter-spacing:-.01em}
+.drop small{display:block;color:var(--muted);margin-top:7px;font-size:12.5px;line-height:1.55}
+.badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.badges span{font-size:11px;font-weight:700;color:var(--brand);background:#EAF3FD;border:1px solid #CFE4F8;padding:5px 11px;border-radius:999px}
+@media (prefers-color-scheme:dark){.badges span{background:#13283F;border-color:#1E3D5F}}
+/* ---------- Controls ---------- */
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+.btn{border:none;border-radius:11px;padding:11px 17px;font-weight:700;font-size:13px;cursor:pointer;background:linear-gradient(120deg,#0B5CAD,#0E7BD6);color:#fff;box-shadow:0 6px 16px -6px rgba(11,92,173,.55);transition:all .18s ease;font-family:inherit}
+.btn:hover{transform:translateY(-1px);box-shadow:0 10px 20px -6px rgba(11,92,173,.6);filter:brightness(1.06)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn.alt{background:var(--surface);color:var(--brand);border:1.5px solid var(--brand);box-shadow:none}
+.btn.alt:hover{background:var(--panel)}
+label.chk{font-size:13px;display:flex;gap:7px;align-items:center;font-weight:600;cursor:pointer}
+input[type=checkbox]{width:17px;height:17px;accent-color:var(--brand);cursor:pointer}
+input[type=text]{padding:10px 13px;border:1.5px solid var(--line);border-radius:11px;background:var(--surface);color:var(--ink);font:inherit;font-size:13.5px;min-width:250px;transition:border-color .15s,box-shadow .15s}
+input[type=text]:focus,select:focus,input[type=number]:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3.5px rgba(11,92,173,.16)}
+select,input[type=number]{padding:8px 9px;border:1.5px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font:inherit;font-size:12.5px;transition:border-color .15s,box-shadow .15s}
+input[type=number]{width:72px}
+.tg{font-size:12.5px;color:var(--muted);display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-weight:600}
+/* ---------- Stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:12px;margin-bottom:16px}
+.stat{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 13px 13px;text-align:center;box-shadow:var(--shadow);overflow:hidden;animation:rise .5s cubic-bezier(.2,.8,.25,1) both;transition:transform .18s ease}
+.stat:hover{transform:translateY(-3px)}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#0B5CAD,#0EA5E9)}
+.stat:nth-child(2)::before{background:linear-gradient(90deg,#15803D,#22C55E)}
+.stat:nth-child(3)::before{background:linear-gradient(90deg,#7C3AED,#A78BFA)}
+.stat:nth-child(4)::before{background:linear-gradient(90deg,#D97706,#FBBF24)}
+.stat:nth-child(5)::before{background:linear-gradient(90deg,#DB2777,#F472B6)}
+.stat:nth-child(6)::before{background:linear-gradient(90deg,#0D9488,#2DD4BF)}
+.stat b{display:block;font-size:23px;font-weight:900;letter-spacing:-.02em}
+.stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+/* ---------- Tables ---------- */
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+th,td{padding:9px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}
+thead th,table tr:first-child th{background:linear-gradient(120deg,#00559F,#0070C0);color:#fff;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em;border-bottom:none;position:sticky;top:0}
+tbody tr,table tr{transition:background .12s}
+table tr:not(:first-child):hover td{background:var(--panel)}
+td.bad{background:var(--redbg);color:var(--red);font-weight:800}
+td.warn{background:var(--yelbg);color:var(--yel);font-weight:800}
+td.good{background:var(--grnbg);color:var(--grn);font-weight:700}
+td.n{text-align:center}
+tr.tot td{font-weight:900;background:var(--panel);border-top:2px solid var(--brand)}
+/* ---------- Misc ---------- */
+#msg{font-size:13.5px;color:var(--brand);font-weight:700;min-height:20px;margin:12px 2px 4px}
+#imgBox img{max-width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:var(--shadow);margin-bottom:8px;animation:rise .4s both}
+.hid{display:none!important}
+details.card summary{cursor:pointer;font-weight:800;font-size:13px;list-style:none}
+details.card summary::-webkit-details-marker{display:none}
+.colgrid{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+.colgrid label{font-size:12px;display:flex;gap:6px;align-items:center;background:var(--panel);border:1.5px solid var(--line);padding:7px 12px;border-radius:999px;cursor:pointer;font-weight:600;transition:all .15s}
+.colgrid label:hover{border-color:var(--brand);color:var(--brand)}
+#rankBox div{padding:8px 11px;border-radius:10px;font-weight:600}
+#rankBox div:nth-child(odd){background:var(--panel)}
+footer{text-align:center;padding:8px 18px 30px;color:var(--muted);font-size:12.5px;line-height:1.7}
+footer .cr{font-weight:800;color:var(--ink)}
+footer .heart{color:#DC2626}
+@media (max-width:640px){.wrap{padding:0 12px 20px}.appbar{padding:20px 16px 26px}.brand h1{font-size:21px}.by{margin-left:0;text-align:left}.btn{flex:1 1 46%;padding:12px 8px}input[type=text]{min-width:0;width:100%}.drop{padding:27px 15px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="appbar-in">
+    <div class="logo">📊</div>
+    <div class="brand">
+      <h1>KPI <span class="pro">PRO</span></h1>
+      <p>Daily KPI Track Report — kisi bhi agency ke liye, ek click me</p>
+    </div>
+    <div class="by">
+      <span class="chip">✦ by RAJPUT</span>
+      <small>Fast • Private • Free</small>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+  <div class="drop" id="drop">
+    <div class="ic">📂</div>
+    <b>Click here or drop your Daily KPI Excel</b>
+    <small>.xlsx / .xls — sheet ka naam kuch bhi ho, PJP ID wala header khud dhund lega.<br>File sirf tumhary browser me khulti hai, kahin upload nahi hoti.</small>
+    <div class="badges"><span>🔒 100% Private</span><span>⚡ Instant Report</span><span>🏢 Any Agency</span><span>📱 WhatsApp Ready Images</span></div>
+  </div>
+  <input type="file" id="file" accept=".xlsx,.xls" class="hid">
+  <div id="msg"></div>
+
+  <div id="app" class="hid">
+    <div class="bar">
+      <input type="text" id="title" value="PSR Daily KPI Report">
+      <label class="chk"><input type="checkbox" id="auto" checked> Auto-generate image on upload</label>
+      <label class="tg">Image Theme
+        <select id="themeSel"><option value="blue">Blue</option><option value="dark">Dark Navy</option><option value="green">Green</option></select>
+      </label>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <details class="card" id="colBox"><summary>⚙️ Columns — report me konsi KPIs dikhani hain? (ek dafa select karo, save ho jayega)</summary>
+      <div class="colgrid" id="colGrid"></div>
+    </details>
+
+    <div class="card"><h2>🎯 Targets — neeche = peela, bohat neeche = lal</h2>
+      <div class="bar" id="targetBar"></div>
+      <div class="tg">Target sirf % aur AVG wali columns par lagta hai. Green = target pura, Yellow = target ke 90% tak, Red = us se bhi neeche.</div>
+    </div>
+
+    <div class="bar">
+      <label class="tg">SDM Filter <select id="sdmF"><option>All</option></select></label>
+      <datalist id="sdmList"></datalist>
+    </div>
+
+    <div class="card"><h2>📋 Track Report — PSR Wise</h2><div class="tblwrap"><table id="t1"></table></div></div>
+    <div class="card"><h2>👥 SDM Wise — Average</h2><div class="tblwrap"><table id="t2"></table></div></div>
+    <div class="card"><h2>🏆 Ranking — Strike Rate</h2><div id="rankBox" style="font-size:13.5px"></div></div>
+
+    <div class="bar">
+      <button class="btn" id="mkImg">🖼️ Generate Images</button>
+      <button class="btn alt" id="dlP">⬇️ PSR Image</button>
+      <button class="btn alt" id="dlS">⬇️ SDM Image</button>
+      <button class="btn alt" id="cpP">📋 Copy PSR</button>
+      <button class="btn alt" id="cpS">📋 Copy SDM</button>
+      <button class="btn" id="shP">📤 Share PSR</button>
+      <button class="btn" id="shS">📤 Share SDM</button>
+      <button class="btn alt" id="dlXls">📗 Track Excel</button>
+    </div>
+    <div class="card" id="imgBox"><h2>🖼️ Images</h2><div id="imgHold" style="color:var(--muted);font-size:13px">Press "Generate Images".</div></div>
+
+    <div class="card"><h2>🧑‍💼 PSRs — Har PSR ka SDM naam likho (browser me save ho jayega)</h2><div class="tblwrap"><table id="ros"></table></div>
+      <div class="bar">
+        <button class="btn alt" id="expMap">⬇️ Export SDM List</button>
+        <button class="btn alt" id="impMapBtn">⬆️ Import SDM List</button>
+        <input type="file" id="impMap" accept=".json" class="hid">
+      </div>
+    </div>
+  </div>
+</div>
+<footer>
+  <div class="cr">© 2026 Rajput — KPI Pro. All rights reserved.</div>
+  <div>Made with <span class="heart">♥</span> by Rajput • Tumhari Excel file tumhary browser se bahar nahi jati</div>
+</footer>
+<script>
+const $=id=>document.getElementById(id);
+const LS={map:'kpiProSdmMap',cols:'kpiProCols',tg:'kpiProTargets',theme:'kpiProTheme'};
+let SAVED={}; try{SAVED=JSON.parse(localStorage.getItem(LS.map)||'{}')}catch(e){}
+let R=[], FILETOTAL=null, HEADERS=[], KPI_COLS=[], TARGETS={}, dateStr='', SDMS=[];
+const DEFAULT_KPIS=['CALL COMPLETION %','STRIKE RATE','AVG. SKU / ORDER'];
+const DEFAULT_TARGETS={'CALL COMPLETION %':100,'STRIKE RATE':75,'AVG. SKU / ORDER':6};
+try{TARGETS=JSON.parse(localStorage.getItem(LS.tg)||'null')||{...DEFAULT_TARGETS}}catch(e){TARGETS={...DEFAULT_TARGETS}}
+let savedCols=null; try{savedCols=JSON.parse(localStorage.getItem(LS.cols)||'null')}catch(e){}
+
+const isPctCol=n=>/%|RATE/.test(n), isAvgCol=n=>/AVG\.|SIZE/.test(n), isRatioCol=n=>isPctCol(n)||isAvgCol(n);
+const fmt=(col,v)=>{ if(v===''||v==null||isNaN(v))return '—'; if(isPctCol(col))return (v*100).toFixed(2)+'%'; if(isAvgCol(col))return Number(v).toFixed(1); return Number.isInteger(v)?String(v):Number(v).toFixed(1); };
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+function status(col,v){ const t=TARGETS[col]; if(t==null||!isRatioCol(col)||isNaN(v))return ''; if(isPctCol(col)){ if(v*100>=t)return 'good'; if(v*100>=t*0.9)return 'warn'; return 'bad'; } if(v>=t)return 'good'; if(v>=t*0.9)return 'warn'; return 'bad'; }
+
+$('drop').onclick=()=>$('file').click();
+$('drop').ondragover=e=>{e.preventDefault();$('drop').classList.add('over');};
+$('drop').ondragleave=()=>$('drop').classList.remove('over');
+$('drop').ondrop=e=>{e.preventDefault(); if(e.dataTransfer.files[0])load(e.dataTransfer.files[0]);};
+$('file').onchange=e=>{if(e.target.files[0])load(e.target.files[0]);};
+
+async function load(f){
+  $('msg').textContent='File parh raha hoon…';
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+    let found=null;
+    for(const n of wb.SheetNames){ const ws=wb.Sheets[n]; if(!ws)continue; const a=XLSX.utils.sheet_to_json(ws,{header:1,defval:''}); const hi=a.findIndex(r=>r.some(c=>String(c).trim()==='PJP ID')); if(hi>=0){found={a,hi};break;} }
+    if(!found) throw new Error('PJP ID wala header nahi mila — ye Daily KPI (R320) file nahi lagti. Sahi file upload karo.');
+    const {a,hi}=found; HEADERS=a[hi].map(c=>String(c).trim());
+    const ix=k=>HEADERS.indexOf(k);
+    if(ix('PJP ID')<0||ix('PSR')<0) throw new Error('Zaruri columns (PJP ID / PSR) nahi mile.');
+    // KPI columns = numeric columns after PSR, excluding IDs
+    const numericCols=HEADERS.filter((h,idx)=>idx>ix('PSR')&&h&&a.slice(hi+1,hi+4).some(r=>typeof r[idx]==='number'));
+    KPI_COLS = savedCols && savedCols.every(c=>numericCols.includes(c)) ? savedCols.slice() : numericCols.filter(c=>DEFAULT_KPIS.includes(c));
+    if(!KPI_COLS.length) KPI_COLS=numericCols.slice(0,3);
+    window._allCols=numericCols;
+    R=[]; FILETOTAL=null;
+    for(let i=hi+1;i<a.length;i++){ const r=a[i], psr=String(r[ix('PSR')]||'').trim();
+      if(psr==='Total'){ const o={}; HEADERS.forEach((h,idx)=>{if(typeof r[idx]==='number')o[h]=r[idx]}); FILETOTAL=o; continue; }
+      if(!psr||!Number(r[ix('PJP ID')])) continue;
+      const o={id:Number(r[ix('PJP ID')]),name:String(r[ix('PJP Name')]||'').trim(),psr,sdm:SAVED[Number(r[ix('PJP ID')])]||'—',inc:!/competition/i.test(String(r[ix('PJP Name')]||'')),vals:{}};
+      HEADERS.forEach((h,idx)=>{if(typeof r[idx]==='number')o.vals[h]=r[idx]});
+      R.push(o);
+    }
+    if(!R.length) throw new Error('Header mila lekin PSR rows nahi mili.');
+    let ag=''; for(const r of a.slice(0,hi)){ for(const v of r){ const s=String(v||''); if(s.includes(' | ')){ag=s.split(' | ')[0].replace(/^\s*\d+\s*-\s*/,'').trim(); break;} } if(ag)break; }
+    if(ag) $('title').value='PSR Daily KPI Report '+ag.toLowerCase().replace(/\b\w/g,m=>m.toUpperCase());
+    dateStr=''; for(const r of a.slice(0,4)){ const m=String(r[0]||'').match(/Period:\s*([\d/]+)\s*-\s*([\d/]+)/); if(m){dateStr=m[2];break;} }
+    if(!dateStr){const d=new Date(); dateStr=[d.getDate(),d.getMonth()+1,d.getFullYear()].map(x=>String(x).padStart(2,'0')).join('/');}
+    buildColUI(); buildTargetUI(); refreshSdms();
+    $('app').classList.remove('hid');
+    $('msg').textContent='Loaded '+f.name+' — '+R.length+' PSRs, date '+dateStr+(FILETOTAL?' — Total Excel file se liya gaya hai ✓':'');
+    render(); if($('auto').checked) makeImg();
+  }catch(e){ $('msg').textContent='Error: '+e.message; }
+}
+function refreshSdms(){ SDMS=[...new Set(R.map(r=>r.sdm).filter(s=>s&&s!=='—'))].sort(); }
+function saveMap(){ try{ R.forEach(r=>{ if(r.sdm==='—')delete SAVED[r.id]; else SAVED[r.id]=r.sdm; }); localStorage.setItem(LS.map,JSON.stringify(SAVED)); }catch(e){} }
+
+function buildColUI(){ const g=$('colGrid'); g.innerHTML=''; (window._allCols||[]).forEach(c=>{ const l=document.createElement('label'); const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=KPI_COLS.includes(c); cb.onchange=()=>{ if(cb.checked)KPI_COLS.push(c); else KPI_COLS=KPI_COLS.filter(x=>x!==c); localStorage.setItem(LS.cols,JSON.stringify(KPI_COLS)); buildTargetUI(); render(); }; l.appendChild(cb); l.appendChild(document.createTextNode(c)); g.appendChild(l); }); }
+function buildTargetUI(){ const bar=$('targetBar'); bar.innerHTML=''; KPI_COLS.filter(isRatioCol).forEach(c=>{ const l=document.createElement('label'); l.className='tg'; l.textContent=c+(isPctCol(c)?' below %':' below'); const inp=document.createElement('input'); inp.type='number'; inp.step='0.1'; inp.value=TARGETS[c]!=null?TARGETS[c]:(DEFAULT_TARGETS[c]||''); inp.onchange=()=>{ TARGETS[c]=+inp.value; localStorage.setItem(LS.tg,JSON.stringify(TARGETS)); render(); }; l.appendChild(inp); bar.appendChild(l); }); }
+
+function groups(){ refreshSdms(); const f=$('sdmF').value; const inc=R.filter(r=>r.inc&&(f==='All'||r.sdm===f));
+  const sd=SDMS.map(s=>{ const g=inc.filter(r=>r.sdm===s); const o={name:s,n:g.length}; KPI_COLS.forEach(c=>o[c]=avg(g.map(r=>r.vals[c]||0))); return o; }).filter(s=>s.n);
+  return {inc,sd}; }
+function cell(tr,v,cls,tag){ const e=document.createElement(tag||'td'); e.textContent=v; if(cls)e.className=cls; tr.appendChild(e); return e; }
+
+function render(){
+  refreshSdms(); const sf=$('sdmF'),cur=sf.value; sf.innerHTML=''; ['All',...SDMS].forEach(s=>{const o=document.createElement('option');o.value=o.textContent=s;sf.appendChild(o);}); sf.value=(cur==='All'||SDMS.includes(cur))?cur:'All';
+  const dl=$('sdmList'); dl.innerHTML=''; SDMS.forEach(s=>{const o=document.createElement('option');o.value=s;dl.appendChild(o);});
+  const {inc,sd}=groups();
+  // Stats cards — file total preferred
+  const totSrc=FILETOTAL||{}; const getT=c=>totSrc[c]!=null?totSrc[c]:avg(inc.map(r=>r.vals[c]||0));
+  const st=$('stats'); st.innerHTML='';
+  [['PSRs',inc.length],['Call Completion',fmt('CALL COMPLETION %',getT('CALL COMPLETION %'))],['Strike Rate',fmt('STRIKE RATE',getT('STRIKE RATE'))],['Avg SKU / Order',fmt('AVG. SKU / ORDER',getT('AVG. SKU / ORDER'))],['Total Orders',fmt('TOTAL ORDERS',FILETOTAL?FILETOTAL['TOTAL ORDERS']:inc.reduce((s,r)=>s+(r.vals['TOTAL ORDERS']||0),0))],['Actual Sale (8oz)',FILETOTAL&&FILETOTAL['ACTUAL SALE (8oz)']!=null?Math.round(FILETOTAL['ACTUAL SALE (8oz)']):Math.round(inc.reduce((s,r)=>s+(r.vals['ACTUAL SALE (8oz)']||0),0))]].forEach(([k,v])=>{ const d=document.createElement('div'); d.className='stat'; d.innerHTML='<b></b><span></span>'; d.querySelector('b').textContent=v; d.querySelector('span').textContent=k; st.appendChild(d); });
+  // Table 1
+  const t1=$('t1'); t1.innerHTML=''; let tr=document.createElement('tr'); ['PJP ID','PJP Name','PSR',...KPI_COLS].forEach(x=>cell(tr,x,'','th')); t1.appendChild(tr);
+  inc.forEach(r=>{ tr=document.createElement('tr'); cell(tr,r.id); cell(tr,r.name); cell(tr,r.psr); KPI_COLS.forEach(c=>cell(tr,fmt(c,r.vals[c]),'n '+status(c,r.vals[c]))); t1.appendChild(tr); });
+  tr=document.createElement('tr'); tr.className='tot'; cell(tr,'Total'); cell(tr,''); cell(tr,''); KPI_COLS.forEach(c=>{ const v=FILETOTAL&&FILETOTAL[c]!=null?FILETOTAL[c]:avg(inc.map(r=>r.vals[c]||0)); cell(tr,fmt(c,v),'n '+status(c,v)); }); t1.appendChild(tr);
+  // Table 2
+  const t2=$('t2'); t2.innerHTML=''; tr=document.createElement('tr'); ['SDM Name',...KPI_COLS].forEach(x=>cell(tr,x,'','th')); t2.appendChild(tr);
+  sd.forEach(s=>{ tr=document.createElement('tr'); cell(tr,s.name); KPI_COLS.forEach(c=>cell(tr,fmt(c,s[c]),'n '+status(c,s[c]))); t2.appendChild(tr); });
+  if(!sd.length){ tr=document.createElement('tr'); cell(tr,'Abhi koi SDM set nahi — neeche wali list me har PSR ka SDM naam likho'); t2.appendChild(tr); }
+  // Ranking
+  const rb=$('rankBox'); const ranked=[...inc].sort((a,b)=>(b.vals['STRIKE RATE']||0)-(a.vals['STRIKE RATE']||0));
+  rb.innerHTML=''; ranked.forEach((r,i)=>{ const d=document.createElement('div'); d.textContent=(i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':'')+(i+1)+'. '+r.psr+' — Strike Rate '+fmt('STRIKE RATE',r.vals['STRIKE RATE'])+', SKU '+fmt('AVG. SKU / ORDER',r.vals['AVG. SKU / ORDER']); rb.appendChild(d); });
+  // Roster
+  const ro=$('ros'); ro.innerHTML=''; tr=document.createElement('tr'); ['Include','PSR','PJP Name','SDM'].forEach(x=>cell(tr,x,'','th')); ro.appendChild(tr);
+  R.forEach(r=>{ tr=document.createElement('tr'); const c1=document.createElement('td'),cb=document.createElement('input'); cb.type='checkbox'; cb.checked=r.inc; cb.onchange=()=>{r.inc=cb.checked;render();}; c1.appendChild(cb); tr.appendChild(c1); cell(tr,r.psr); cell(tr,r.name);
+    const c4=document.createElement('td'),inp=document.createElement('input'); inp.type='text'; inp.setAttribute('list','sdmList'); inp.placeholder='SDM name'; inp.style.minWidth='170px'; inp.value=r.sdm==='—'?'':r.sdm; inp.onchange=()=>{r.sdm=inp.value.trim()||'—'; saveMap(); render();}; c4.appendChild(inp); tr.appendChild(c4); ro.appendChild(tr); });
+}
+
+// ---------- Image generation (Canvas) ----------
+const THEMES={blue:['#00133A','#0B66B8'],dark:['#000000','#263238'],green:['#00331B','#1B7A43']};
+function draw(kind){
+  const {inc,sd}=groups(); const cols=KPI_COLS.slice(0,5);
+  const rowsData = kind==='psr' ? inc.map(r=>[r.id,r.name,r.psr,...cols.map(c=>fmt(c,r.vals[c]))]) : sd.map(s=>[s.name,...cols.map(c=>fmt(c,s[c]))]);
+  const heads = kind==='psr' ? ['PJP ID','PJP Name','PSR',...cols] : ['SDM Name',...cols];
+  if(kind==='sdm'&&!sd.length) return null;
+  const totVals = kind==='psr' ? cols.map(c=>fmt(c, FILETOTAL&&FILETOTAL[c]!=null?FILETOTAL[c]:avg(inc.map(r=>r.vals[c]||0)))) : null;
+  const S=2, RH=34, P=20, HB=72;
+  const baseW = kind==='psr'? [80,170,240] : [490];
+  const colW=[...baseW, ...cols.map(()=>Math.max(110, Math.floor(470/Math.max(cols.length,1))))];
+  const W=colW.reduce((a,b)=>a+b,0)+P*2;
+  const H=HB+22+RH*(rowsData.length+1+(totVals?1:0))+62;
+  const cv=document.createElement('canvas'); cv.width=W*S; cv.height=H*S; const x=cv.getContext('2d'); x.scale(S,S);
+  x.fillStyle='#fff'; x.fillRect(0,0,W,H); x.textBaseline='middle';
+  const th=THEMES[$('themeSel').value]||THEMES.blue; const g=x.createLinearGradient(0,0,W,0); g.addColorStop(0,th[0]); g.addColorStop(1,th[1]);
+  x.fillStyle=g; x.fillRect(0,0,W,HB); x.fillStyle='#fff'; x.font='bold 23px Arial'; x.textAlign='left'; x.fillText($('title').value,P,HB/2-9,W-190);
+  x.font='14px Arial'; x.fillText(kind==='psr'?'PSR wise report':'SDM wise report',P,HB/2+17);
+  x.font='bold 18px Arial'; x.textAlign='right'; x.fillText(dateStr,W-P,HB/2);
+  let y=HB+22;
+  const drawRow=(vals,flags,opt={})=>{ let cx=P; vals.forEach((v,i)=>{ const w=colW[i]; const fl=flags&&flags[i]; x.fillStyle=opt.head?'#0070C0':(fl==='bad'?'#D32F2F':fl==='warn'?'#F9A825':'#fff'); x.fillRect(cx,y,w,RH); x.strokeStyle='#8A8A8A'; x.strokeRect(cx,y,w,RH); x.fillStyle=(opt.head||fl)?'#fff':'#000'; if(fl==='warn')x.fillStyle='#000'; x.font=(opt.head||opt.bold||fl?'bold ':'')+'13px Arial'; const left=i<(kind==='psr'?3:1); x.textAlign=left?'left':'center'; x.fillText(String(v),left?cx+8:cx+w/2,y+RH/2+1,w-12); cx+=w; }); y+=RH; };
+  drawRow(heads,null,{head:1});
+  rowsData.forEach((vals,ri)=>{ const src=kind==='psr'?inc[ri]:sd[ri]; const flags=vals.map((v,i)=>{ if(i<(kind==='psr'?3:1))return ''; const c=cols[i-(kind==='psr'?3:1)]; const raw=kind==='psr'?src.vals[c]:src[c]; return status(c,raw); }); drawRow(vals,flags); });
+  if(totVals){ const tflags=['','','',...cols.map(c=>status(c, FILETOTAL&&FILETOTAL[c]!=null?FILETOTAL[c]:avg(inc.map(r=>r.vals[c]||0))))]; drawRow(['Total','','',...totVals], tflags, {bold:1}); }
+  x.fillStyle='#D32F2F'; x.fillRect(P,y+16,14,14); x.fillStyle='#333'; x.font='12px Arial'; x.textAlign='left';
+  const leg=Object.entries(TARGETS).filter(([k])=>cols.includes(k)).map(([k,v])=>k+' < '+v+(isPctCol(k)?'%':'')).join('   |   ');
+  x.fillText('Below target:  '+leg,P+22,y+23);
+  x.fillStyle='#8A94A6'; x.font='11px Arial'; x.fillText('© Rajput — KPI Pro',P,y+42);
+  return cv;
+}
+const cvs={};
+function makeImg(){ if(!R.length)return; const hold=$('imgHold'); hold.innerHTML=''; delete cvs.psr; delete cvs.sdm;
+  [['psr','PSR image'],['sdm','SDM image']].forEach(([k,lab])=>{ const cv=draw(k); if(!cv)return; cvs[k]=cv; const t=document.createElement('div'); t.textContent=lab; t.style.cssText='font-weight:700;font-size:12px;margin:8px 0 4px'; const im=new Image(); im.src=cv.toDataURL('image/png'); im.alt=lab; hold.appendChild(t); hold.appendChild(im); });
+  const hint=document.createElement('div'); hint.textContent='Mobile par: image ko press karke rakho to save/share ho jayegi.'; hint.style.cssText='font-size:12px;color:var(--muted);margin-top:8px'; hold.appendChild(hint);
+}
+$('mkImg').onclick=makeImg;
+$('title').oninput=()=>{ if(cvs.psr)makeImg(); };
+$('sdmF').onchange=()=>{ render(); if(cvs.psr)makeImg(); };
+$('themeSel').onchange=()=>{ localStorage.setItem(LS.theme,$('themeSel').value); if(cvs.psr)makeImg(); };
+try{ const t=localStorage.getItem(LS.theme); if(t)$('themeSel').value=t; }catch(e){}
+
+function downloadBlob(name,blob){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},400); }
+const fn=k=>(k==='psr'?'PSR_':'SDM_')+'Daily_KPI_'+dateStr.replace(/\//g,'-')+'.png';
+function dl(k){ if(!cvs[k])makeImg(); if(!cvs[k]){$('msg').textContent='Pehle SDM naam set karo phir SDM image banegi.';return;} cvs[k].toBlob(b=>downloadBlob(fn(k),b),'image/png'); }
+function cp(k){ if(!cvs[k])makeImg(); if(!cvs[k])return; cvs[k].toBlob(async b=>{ try{ await navigator.clipboard.write([new ClipboardItem({'image/png':b})]); $('msg').textContent=k.toUpperCase()+' image copy ho gayi.'; }catch(e){ $('msg').textContent='Copy yahan blocked hai — Download button use karo.'; } }); }
+function sh(k){ if(!cvs[k])makeImg(); if(!cvs[k])return; cvs[k].toBlob(async b=>{ const f=new File([b],fn(k),{type:'image/png'}); try{ if(navigator.canShare&&navigator.canShare({files:[f]})) await navigator.share({files:[f],title:$('title').value}); else $('msg').textContent='Share is browser me nahi hai — image ko press karke rakho.'; }catch(e){ if(e.name!=='AbortError')$('msg').textContent='Share blocked — image press karke save karo.'; } },'image/png'); }
+$('dlP').onclick=()=>dl('psr'); $('dlS').onclick=()=>dl('sdm'); $('cpP').onclick=()=>cp('psr'); $('cpS').onclick=()=>cp('sdm'); $('shP').onclick=()=>sh('psr'); $('shS').onclick=()=>sh('sdm');
+if(!(navigator.share&&navigator.canShare)){ $('shP').classList.add('hid'); $('shS').classList.add('hid'); }
+
+$('dlXls').onclick=()=>{ const {inc,sd}=groups(); const aoa=[[$('title').value,'','',dateStr],['PJP ID','PJP Name','PSR',...KPI_COLS]];
+  inc.forEach(r=>aoa.push([r.id,r.name,r.psr,...KPI_COLS.map(c=>r.vals[c]??'')]));
+  aoa.push(['Total','','',...KPI_COLS.map(c=>FILETOTAL&&FILETOTAL[c]!=null?FILETOTAL[c]:+avg(inc.map(r=>r.vals[c]||0)).toFixed(4))],[],[$('title').value,'','',dateStr],['SDM Name',...KPI_COLS]);
+  sd.forEach(s=>aoa.push([s.name,...KPI_COLS.map(c=>+s[c].toFixed(4))]));
+  const ws=XLSX.utils.aoa_to_sheet(aoa); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Track'); const out=XLSX.write(wb,{type:'array',bookType:'xlsx'}); downloadBlob('Track_'+dateStr.replace(/\//g,'-')+'.xlsx',new Blob([out])); };
+
+$('expMap').onclick=()=>downloadBlob('sdm-list.json',new Blob([JSON.stringify(SAVED,null,2)],{type:'application/json'}));
+$('impMapBtn').onclick=()=>$('impMap').click();
+$('impMap').onchange=e=>{ const f=e.target.files[0]; if(!f)return; f.text().then(t=>{ try{ SAVED=JSON.parse(t); localStorage.setItem(LS.map,JSON.stringify(SAVED)); R.forEach(r=>r.sdm=SAVED[r.id]||'—'); render(); $('msg').textContent='SDM list import ho gayi ✓'; }catch(err){ $('msg').textContent='Import fail — sahi JSON file do.'; } }); };
+
+</script>
+</body>
+</html>
