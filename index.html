@@ -104,6 +104,21 @@ footer .cr{font-weight:800;color:var(--ink)}
 footer .heart{color:#DC2626}
 @media (max-width:640px){.wrap{padding:0 12px 20px}.appbar{padding:20px 16px 26px}.brand h1{font-size:21px}.by{margin-left:0;text-align:left}.btn{flex:1 1 46%;padding:12px 8px}input[type=text]{min-width:0;width:100%}.drop{padding:27px 15px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- Booking report (Orders Dump) ---------- */
+.sec-head{display:flex;align-items:center;gap:10px;margin:22px 0 12px}
+.sec-head h2{margin:0;font-size:17px;font-weight:900;letter-spacing:-.01em}
+.sec-head::after{content:'';flex:1;height:1px;background:var(--line)}
+table.book{border-collapse:separate;border-spacing:0;width:100%;font-size:13.5px}
+table.book th,table.book td{border:1px solid #B9C4D0;padding:8px 12px;white-space:nowrap}
+table.book .ttl{background:#F6C48B;color:#1F2937;font-weight:900;font-size:15.5px;text-align:center;letter-spacing:.01em}
+table.book th{background:#F2F4F7;color:#111827;font-weight:800;text-align:center}
+table.book td.rt{background:#D9E4F2;font-weight:700;color:#0F2B52}
+table.book td.num{text-align:center;font-weight:600}
+table.book tr.gt td{background:#FFE81A;font-weight:900;text-align:center;color:#111827}
+table.book tr.gt td.rt{background:#FFE81A;text-align:center}
+table.piv td.num,table.piv th.num{text-align:center}
+table.piv td.gtc,table.piv tr.gt td{font-weight:900;background:var(--panel)}
 </style>
 </head>
 <body>
@@ -180,6 +195,36 @@ footer .heart{color:#DC2626}
     </div>
   </div>
 </div>
+
+  <div class="sec-head"><h2>📦 Sales Orders Dump — Booking Reports</h2></div>
+  <div class="drop" id="drop2">
+    <div class="ic">🧾</div>
+    <b>Click here or drop your Sales Orders Dump Excel</b>
+    <small>Dump ki Data sheet se do reports khud ban jayengi — Today Booking (7up &amp; Mirinda) aur pura Package × Route pivot.<br>Ye file bhi sirf tumhary browser me khulti hai.</small>
+    <div class="badges"><span>🥤 Booking Report</span><span>🧮 Auto Pivot</span><span>🖼️ Image + Excel</span></div>
+  </div>
+  <input type="file" id="file2" accept=".xlsx,.xls" class="hid">
+  <div id="msg2"></div>
+
+  <div id="dumpApp" class="hid">
+    <div class="bar">
+      <input type="text" id="dumpTitle" value="Today Booking">
+      <label class="tg">Package
+        <select id="pkgSel"></select>
+      </label>
+      <label class="tg">Brand 1 <select id="brA"></select></label>
+      <label class="tg">Brand 2 <select id="brB"></select></label>
+    </div>
+    <div class="card"><h2>🥤 Today Booking</h2><div class="tblwrap"><table class="book" id="bookTbl"></table></div></div>
+    <div class="card"><h2>🧮 Full Pivot — Package × Route (Sum of Cases)</h2><div class="tblwrap"><table id="pivTbl"></table></div></div>
+    <div class="bar">
+      <button class="btn" id="dlBookImg">⬇️ Booking Image</button>
+      <button class="btn alt" id="dlPivImg">⬇️ Pivot Image</button>
+      <button class="btn" id="shBookImg">📤 Share Booking</button>
+      <button class="btn alt" id="dlDumpXls">📗 Booking Excel</button>
+    </div>
+    <div class="card" id="dumpImgBox"><h2>🖼️ Images</h2><div id="dumpImgHold" style="color:var(--muted);font-size:13px">Booking ya Pivot image download dabao — image yahan bhi nazar ayegi.</div></div>
+  </div>
 <footer>
   <div class="cr">© 2026 Rajput — KPI Pro. All rights reserved.</div>
   <div>Made with <span class="heart">♥</span> by Rajput • Tumhari Excel file tumhary browser se bahar nahi jati</div>
@@ -333,6 +378,142 @@ $('dlXls').onclick=()=>{ const {inc,sd}=groups(); const aoa=[[$('title').value,'
 $('expMap').onclick=()=>downloadBlob('sdm-list.json',new Blob([JSON.stringify(SAVED,null,2)],{type:'application/json'}));
 $('impMapBtn').onclick=()=>$('impMap').click();
 $('impMap').onchange=e=>{ const f=e.target.files[0]; if(!f)return; f.text().then(t=>{ try{ SAVED=JSON.parse(t); localStorage.setItem(LS.map,JSON.stringify(SAVED)); R.forEach(r=>r.sdm=SAVED[r.id]||'—'); render(); $('msg').textContent='SDM list import ho gayi ✓'; }catch(err){ $('msg').textContent='Import fail — sahi JSON file do.'; } }); };
+
+
+// ================= Sales Orders Dump — Booking Reports =================
+let DUMP=null, dumpBook=null, dumpPiv=null;
+const fmtC=v=>{ if(!v) return ''; const r=Math.round(v*10000)/10000; return Number.isInteger(r)?String(r):String(r); };
+const fmtC0=v=>{ const r=Math.round((v||0)*10000)/10000; return String(r); };
+$('drop2').onclick=()=>$('file2').click();
+$('drop2').ondragover=e=>{e.preventDefault();$('drop2').classList.add('over');};
+$('drop2').ondragleave=()=>$('drop2').classList.remove('over');
+$('drop2').ondrop=e=>{e.preventDefault();$('drop2').classList.remove('over');if(e.dataTransfer.files[0])loadDump(e.dataTransfer.files[0]);};
+$('file2').onchange=e=>{if(e.target.files[0])loadDump(e.target.files[0]);};
+
+async function loadDump(f){
+  const msg=$('msg2'); msg.style.cssText='font-size:13.5px;color:var(--brand);font-weight:700;margin:12px 2px 4px'; msg.textContent='Dump parh raha hoon…';
+  try{
+    if(typeof XLSX==='undefined') throw new Error('Excel library load nahi hui — internet check karke dobara try karo.');
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+    let rows=null;
+    for(const n of wb.SheetNames){ const ws=wb.Sheets[n]; if(!ws)continue; const a=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      const hi=a.findIndex(r=>r.some(c=>String(c).trim()==='SD_ORDER_ID')&&r.some(c=>String(c).trim()==='SDO_CASES'));
+      if(hi>=0){ rows={a,hi}; break; } }
+    if(!rows) throw new Error('Data sheet nahi mili — ye Sales Orders Dump wali file nahi lagti (SD_ORDER_ID / SDO_CASES wala header chahiye).');
+    const {a,hi}=rows, H=a[hi].map(c=>String(c).trim()); const ix=k=>H.indexOf(k);
+    const cD=ix('SD_DISTRIBUTOR_LABEL'), cR=ix('PJP_LABEL'), cP=ix('SDO_PACKAGE_LABEL'), cB=ix('SDO_BRAND_LABEL'), cC=ix('SDO_CASES'), cDt=ix('SD_CREATED_ON_DATE');
+    const data=[]; let dist='', ddate='';
+    for(let i=hi+1;i<a.length;i++){ const r=a[i]; if(!r[cR])continue;
+      data.push({route:String(r[cR]).trim(), pack:String(r[cP]||'').trim(), brand:String(r[cB]||'').trim(), cases:parseFloat(r[cC])||0});
+      if(!dist&&cD>=0&&r[cD]) dist=String(r[cD]).trim();
+      if(!ddate&&cDt>=0&&r[cDt]) ddate=String(r[cDt]).trim(); }
+    if(!data.length) throw new Error('Header mila lekin data rows nahi mili.');
+    const distName=dist.replace(/^\s*\d+\s*-\s*/,'').toLowerCase().replace(/\b\w/g,m=>m.toUpperCase());
+    DUMP={data, dist:distName, date:ddate,
+      routes:[...new Set(data.map(r=>r.route))].sort(),
+      packs:[...new Set(data.map(r=>r.pack))].sort(),
+      brands:[...new Set(data.map(r=>r.brand))].sort()};
+    const fill=(sel,items,pref)=>{ sel.innerHTML=''; items.forEach(v=>{const o=document.createElement('option');o.value=o.textContent=v;sel.appendChild(o);}); if(items.includes(pref))sel.value=pref; };
+    fill($('pkgSel'),DUMP.packs,'1500 ML PET'); fill($('brA'),DUMP.brands,'7-UP'); fill($('brB'),DUMP.brands,'MIRINDA');
+    $('dumpApp').classList.remove('hid');
+    msg.textContent='Loaded '+f.name+' — '+data.length+' order lines, '+(distName||'distributor')+(ddate?', date '+ddate:'');
+    renderDump();
+  }catch(e){ msg.textContent='Error: '+e.message; }
+}
+['pkgSel','brA','brB'].forEach(i=>$(i).addEventListener('change',renderDump));
+$('dumpTitle').addEventListener('input',renderDump);
+
+function calcDump(){
+  const pkg=$('pkgSel').value, bA=$('brA').value, bB=$('brB').value;
+  const bookRows=DUMP.routes.map(rt=>{ let x=0,y=0;
+    DUMP.data.forEach(r=>{ if(r.pack===pkg&&r.route===rt){ if(r.brand===bA)x+=r.cases; if(r.brand===bB)y+=r.cases; } });
+    return {route:rt,a:x,b:y,t:x+y}; }).filter(r=>r.t>0);
+  const pivRows=DUMP.packs.map(pk=>{ const vals=DUMP.routes.map(rt=>DUMP.data.filter(r=>r.pack===pk&&r.route===rt).reduce((s,r)=>s+r.cases,0));
+    return {pack:pk,vals,total:vals.reduce((s,v)=>s+v,0)}; });
+  const colT=DUMP.routes.map((rt,i)=>pivRows.reduce((s,row)=>s+row.vals[i],0));
+  return {pkg,bA,bB,bookRows,pivRows,colT,grand:colT.reduce((s,v)=>s+v,0),
+    bTotA:bookRows.reduce((s,r)=>s+r.a,0), bTotB:bookRows.reduce((s,r)=>s+r.b,0), bTot:bookRows.reduce((s,r)=>s+r.t,0)};
+}
+function renderDump(){
+  if(!DUMP)return;
+  const C=calcDump(); dumpBook=C; dumpPiv=C;
+  const short=b=>b==='7-UP'?'7up':(b.charAt(0)+b.slice(1).toLowerCase());
+  const title=(DUMP.dist?DUMP.dist+' ':'')+'Today Booking '+short(C.bA)+' & '+short(C.bB);
+  if(document.activeElement!==$('dumpTitle')) $('dumpTitle').value=title;
+  const bt=$('bookTbl'); bt.innerHTML='';
+  let tr=document.createElement('tr'); let th=document.createElement('th'); th.className='ttl'; th.colSpan=4; th.textContent=$('dumpTitle').value; tr.appendChild(th); bt.appendChild(tr);
+  tr=document.createElement('tr'); ['Route',short(C.bA),short(C.bB),'Grand Total'].forEach(h=>{const e=document.createElement('th');e.textContent=h;tr.appendChild(e);}); bt.appendChild(tr);
+  C.bookRows.forEach(r=>{ tr=document.createElement('tr'); const c1=document.createElement('td'); c1.className='rt'; c1.textContent=r.route; tr.appendChild(c1);
+    [r.a,r.b,r.t].forEach(v=>{const e=document.createElement('td');e.className='num';e.textContent=fmtC0(v);tr.appendChild(e);}); bt.appendChild(tr); });
+  tr=document.createElement('tr'); tr.className='gt'; const g1=document.createElement('td'); g1.className='rt'; g1.textContent='Grand Total'; tr.appendChild(g1);
+  [C.bTotA,C.bTotB,C.bTot].forEach(v=>{const e=document.createElement('td');e.textContent=fmtC0(v);tr.appendChild(e);}); bt.appendChild(tr);
+  const pt=$('pivTbl'); pt.innerHTML='';
+  tr=document.createElement('tr'); ['Package',...DUMP.routes,'Grand Total'].forEach((h,i)=>{const e=document.createElement('th'); if(i>0)e.className='num'; e.textContent=h; tr.appendChild(e);}); pt.appendChild(tr);
+  C.pivRows.forEach(row=>{ tr=document.createElement('tr'); const c=document.createElement('td'); c.textContent=row.pack; c.style.fontWeight='600'; tr.appendChild(c);
+    row.vals.forEach(v=>{const e=document.createElement('td');e.className='num';e.textContent=fmtC(v);tr.appendChild(e);});
+    const gt=document.createElement('td'); gt.className='num gtc'; gt.textContent=fmtC0(row.total); tr.appendChild(gt); pt.appendChild(tr); });
+  tr=document.createElement('tr'); tr.className='gt'; const l=document.createElement('td'); l.textContent='Grand Total'; tr.appendChild(l);
+  C.colT.forEach(v=>{const e=document.createElement('td');e.className='num';e.textContent=fmtC0(v);tr.appendChild(e);});
+  const g=document.createElement('td'); g.className='num'; g.textContent=fmtC0(C.grand); tr.appendChild(g); pt.appendChild(tr);
+}
+function showDumpImg(cv,label){ const hold=$('dumpImgHold'); const t=document.createElement('div'); t.textContent=label; t.style.cssText='font-weight:700;font-size:12px;margin:8px 0 4px';
+  const im=new Image(); im.src=cv.toDataURL('image/png'); im.style.cssText='max-width:100%;border:1px solid var(--line);border-radius:12px;background:#fff';
+  hold.innerHTML=''; hold.appendChild(t); hold.appendChild(im); }
+function drawBook(){
+  if(!dumpBook)renderDump(); const C=dumpBook, S=2,P=6,RH=34,TH=44,HH=36;
+  const cw=[270,120,120,140]; const W=cw.reduce((a,b)=>a+b,0)+P*2, H=TH+HH+RH*(C.bookRows.length+1)+30;
+  const cv=document.createElement('canvas'); cv.width=W*S; cv.height=H*S; const x=cv.getContext('2d'); x.scale(S,S);
+  x.fillStyle='#fff'; x.fillRect(0,0,W,H); x.textBaseline='middle';
+  let y=P;
+  x.fillStyle='#F6C48B'; x.fillRect(P,y,W-P*2,TH); x.strokeStyle='#9AA5B1'; x.strokeRect(P,y,W-P*2,TH);
+  x.fillStyle='#1F2937'; x.font='900 17px Arial'; x.textAlign='center'; x.fillText($('dumpTitle').value,W/2,y+TH/2+1); y+=TH;
+  const row=(vals,kind)=>{ let cx=P; vals.forEach((v,i)=>{ const w=cw[i];
+    x.fillStyle=kind==='head'?'#F2F4F7':kind==='gt'?'#FFE81A':(i===0?'#D9E4F2':'#FFFFFF');
+    x.fillRect(cx,y,w,RH); x.strokeStyle='#B9C4D0'; x.strokeRect(cx,y,w,RH);
+    x.fillStyle='#111827'; x.font=(kind!=='row'||i===0?'bold ':'')+'13px Arial'; x.textAlign=i===0&&kind==='row'?'left':'center';
+    x.fillText(String(v), i===0&&kind==='row'?cx+10:cx+w/2, y+RH/2+1); cx+=w; }); y+=RH; };
+  const short=b=>b==='7-UP'?'7up':(b.charAt(0)+b.slice(1).toLowerCase());
+  row(['Route',short(C.bA),short(C.bB),'Grand Total'],'head');
+  C.bookRows.forEach(r=>row([r.route,fmtC0(r.a),fmtC0(r.b),fmtC0(r.t)],'row'));
+  row(['Grand Total',fmtC0(C.bTotA),fmtC0(C.bTotB),fmtC0(C.bTot)],'gt');
+  x.fillStyle='#8A94A6'; x.font='11px Arial'; x.textAlign='left'; x.fillText('© Rajput — KPI Pro'+(DUMP.date?' • '+DUMP.date:''),P,y+12);
+  return cv;
+}
+function drawPiv(){
+  if(!dumpPiv)renderDump(); const C=dumpPiv, S=2,P=16,RH=32,HB=64;
+  const cw=[210,...DUMP.routes.map(()=>140),150]; const W=cw.reduce((a,b)=>a+b,0)+P*2;
+  const H=HB+14+RH*(C.pivRows.length+2)+30;
+  const cv=document.createElement('canvas'); cv.width=W*S; cv.height=H*S; const x=cv.getContext('2d'); x.scale(S,S);
+  x.fillStyle='#fff'; x.fillRect(0,0,W,H); x.textBaseline='middle';
+  const g=x.createLinearGradient(0,0,W,0); g.addColorStop(0,'#00133A'); g.addColorStop(1,'#0B66B8');
+  x.fillStyle=g; x.fillRect(0,0,W,HB); x.fillStyle='#fff'; x.font='bold 21px Arial'; x.textAlign='left';
+  x.fillText((DUMP.dist?DUMP.dist+' — ':'')+'Package × Route Pivot',P,HB/2-10,W-170);
+  x.font='13px Arial'; x.fillText('Sum of Cases — Sales Orders Dump',P,HB/2+15);
+  x.font='bold 16px Arial'; x.textAlign='right'; x.fillText(DUMP.date||'',W-P,HB/2);
+  let y=HB+14;
+  const row=(vals,kind)=>{ let cx=P; vals.forEach((v,i)=>{ const w=cw[i];
+    x.fillStyle=kind==='head'?'#0070C0':kind==='gt'?'#EAF1F8':'#fff'; x.fillRect(cx,y,w,RH); x.strokeStyle='#9AA5B1'; x.strokeRect(cx,y,w,RH);
+    x.fillStyle=kind==='head'?'#fff':'#111827'; x.font=(kind!=='row'||i===0||i===vals.length-1?'bold ':'')+'12.5px Arial'; x.textAlign=i===0?'left':'center';
+    x.fillText(String(v), i===0?cx+8:cx+w/2, y+RH/2+1, w-10); cx+=w; }); y+=RH; };
+  row(['Package',...DUMP.routes,'Grand Total'],'head');
+  C.pivRows.forEach(r=>row([r.pack,...r.vals.map(fmtC),fmtC0(r.total)],'row'));
+  row(['Grand Total',...C.colT.map(fmtC0),fmtC0(C.grand)],'gt');
+  x.fillStyle='#8A94A6'; x.font='11px Arial'; x.textAlign='left'; x.fillText('© Rajput — KPI Pro',P,y+12);
+  return cv;
+}
+$('dlBookImg').onclick=()=>{ const cv=drawBook(); showDumpImg(cv,'Booking image'); cv.toBlob(b=>downloadBlob('Booking_'+(DUMP.dist||'Report').replace(/\s+/g,'_')+'.png',b),'image/png'); };
+$('dlPivImg').onclick=()=>{ const cv=drawPiv(); showDumpImg(cv,'Pivot image'); cv.toBlob(b=>downloadBlob('Pivot_'+(DUMP.dist||'Report').replace(/\s+/g,'_')+'.png',b),'image/png'); };
+$('shBookImg').onclick=()=>{ const cv=drawBook(); showDumpImg(cv,'Booking image'); cv.toBlob(async b=>{ const f=new File([b],'Booking.png',{type:'image/png'});
+  try{ if(navigator.canShare&&navigator.canShare({files:[f]})) await navigator.share({files:[f],title:$('dumpTitle').value}); else $('msg2').textContent='Share is browser me nahi — Booking Image download kar lo.'; }catch(e){} },'image/png'); };
+if(!(navigator.share&&navigator.canShare)) $('shBookImg').classList.add('hid');
+$('dlDumpXls').onclick=()=>{ const C=dumpBook||calcDump(); const short=b=>b==='7-UP'?'7up':(b.charAt(0)+b.slice(1).toLowerCase());
+  const bAoa=[[$('dumpTitle').value],['Route',short(C.bA),short(C.bB),'Grand Total'],...C.bookRows.map(r=>[r.route,r.a,r.b,r.t]),['Grand Total',C.bTotA,C.bTotB,C.bTot]];
+  const pAoa=[['Package',...DUMP.routes,'Grand Total'],...C.pivRows.map(r=>[r.pack,...r.vals,r.total]),['Grand Total',...C.colT,C.grand]];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(bAoa),'Booking');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(pAoa),'Pivot');
+  const out=XLSX.write(wb,{type:'array',bookType:'xlsx'});
+  downloadBlob('Booking_Report_'+(DUMP.dist||'').replace(/\s+/g,'_')+'.xlsx',new Blob([out])); };
 
 </script>
 </body>
